@@ -1,7 +1,10 @@
 [project]
 name = "my-app"
 version = "0.1.0"
-dependencies = []
+dependencies = [
+    "requests",
+    "httpagentparser"
+]
 
 [tool.vercel]
 entrypoint = "api.image:app"
