@@ -1,2 +1,7 @@
+[project]
+name = "my-app"
+version = "0.1.0"
+dependencies = []
+
 [tool.vercel]
 entrypoint = "api.image:app"
